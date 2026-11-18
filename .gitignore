@@ -1,0 +1,18 @@
+# Environnement virtuel
+.venv/
+
+# Données Kaggle (ne pas redistribuer, à télécharger depuis Kaggle)
+data/
+
+# Fichiers de soumission générés
+submissions/*.csv
+
+# Jupyter / Python
+.ipynb_checkpoints/
+__pycache__/
+*.pyc
+
+# Système / éditeur
+.DS_Store
+Thumbs.db
+.vscode/
