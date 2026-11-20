@@ -28,3 +28,29 @@ class GroupMedianImputer(BaseEstimator, TransformerMixin):
         X[self.target_col] = X[self.target_col].fillna(self.global_median_)
 
         return X
+class ModeImputer(BaseEstimator, TransformerMixin):
+    """Remplit les NaN de target_col avec la valeur la plus fréquente,
+    en ignorant exclude_value (ex. "None" = pas de placage), apprise
+    uniquement sur les données passées à fit.
+    Hypothèse : seules les lignes à imputer sont encore NaN."""
+
+    def __init__(self, target_col="MasVnrType", exclude_value="None"):
+        # Paramètres uniquement (pas de calcul) : nécessaire pour clone() en CV
+        self.target_col = target_col
+        self.exclude_value = exclude_value
+
+    def fit(self, X, y=None):
+        # Valeurs de target_col hors exclude_value (les NaN sont ignorés par mode())
+        condition = (X[self.target_col] != self.exclude_value)
+        value = X.loc[condition, self.target_col]
+
+        # Valeur la plus fréquente parmi ces valeurs
+        self.mode_ = value.mode()[0]
+        return self
+
+    def transform(self, X):
+        X = X.copy()  # ne modifie jamais les données d'origine
+
+        # Remplissage des NaN restants par le mode appris
+        X[self.target_col] = X[self.target_col].fillna(self.mode_)
+        return X
