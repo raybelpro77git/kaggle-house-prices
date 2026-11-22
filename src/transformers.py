@@ -30,8 +30,13 @@ class GroupMedianImputer(BaseEstimator, TransformerMixin):
         return X
 class ModeImputer(BaseEstimator, TransformerMixin):
     """Remplit les NaN de target_col avec la valeur la plus fréquente,
-    en ignorant exclude_value (ex. "None" = pas de placage), apprise
-    uniquement sur les données passées à fit.
+    apprise uniquement sur les données passées à fit, en ignorant
+    les valeurs de exclude_value.
+
+    exclude_value : str ou liste de str
+        Valeur(s) à ignorer pour le calcul du mode, ex. "None" (élément absent)
+        ou ["None", "Unf"] (élément absent ou non aménagé).
+
     Hypothèse : seules les lignes à imputer sont encore NaN."""
 
     def __init__(self, target_col="MasVnrType", exclude_value="None"):
@@ -40,8 +45,15 @@ class ModeImputer(BaseEstimator, TransformerMixin):
         self.exclude_value = exclude_value
 
     def fit(self, X, y=None):
+        # Un texte seul est mis dans une liste (list("None") découperait le texte
+        # lettre par lettre) ; variable locale : on ne modifie pas le paramètre
+        if isinstance(self.exclude_value, str):
+            list_exclude_value = [self.exclude_value]
+        else:
+            list_exclude_value = self.exclude_value
+
         # Valeurs de target_col hors exclude_value (les NaN sont ignorés par mode())
-        condition = (X[self.target_col] != self.exclude_value)
+        condition = (~X[self.target_col].isin(list_exclude_value))
         value = X.loc[condition, self.target_col]
 
         # Valeur la plus fréquente parmi ces valeurs
