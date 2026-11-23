@@ -74,3 +74,43 @@ def clean(all_X):
         all_X[col] = all_X[col].astype(str)
 
     return all_X
+
+
+def add_features(all_X):
+    """Ajoute les features retenues (voir le document de feature engineering).
+
+    Calculs déterministes, appliqués après clean(). L'ordre compte :
+    IsNew après le ramené à 0 des âges, IsRemodeled et HasPool avant
+    la suppression des colonnes dont elles dépendent.
+    """
+    all_X = all_X.copy()
+
+    # Surface totale : sous-sol + 1er étage + 2e étage
+    all_X["TotalSF"] = all_X["TotalBsmtSF"] + all_X["1stFlrSF"] + all_X["2ndFlrSF"]
+
+    # Âges au moment de la vente, ramenés à 0 pour les maisons vendues
+    # avant d'être terminées (construction ou rénovation datée après la vente)
+    all_X["HouseAge"] = (all_X["YrSold"] - all_X["YearBuilt"]).clip(lower=0)
+    all_X["RemodAge"] = (all_X["YrSold"] - all_X["YearRemodAdd"]).clip(lower=0)
+
+    # Rénovée : année de rénovation différente de l'année de construction
+    # (avant la suppression des années)
+    all_X["IsRemodeled"] = (all_X["YearBuilt"] != all_X["YearRemodAdd"]).astype(int)
+
+    # Neuve à la vente (après le ramené à 0 des âges)
+    all_X["IsNew"] = (all_X["HouseAge"] == 0).astype(int)
+
+    # Nombre total de salles de bain (une demi-salle de bain compte pour 0,5)
+    all_X["TotalBath"] = (
+        all_X["FullBath"] + 0.5 * all_X["HalfBath"]
+        + all_X["BsmtFullBath"] + 0.5 * all_X["BsmtHalfBath"]
+    )
+
+    # Présence d'un 2e étage et d'une piscine (avant la suppression de PoolArea)
+    all_X["Has2ndFloor"] = (all_X["2ndFlrSF"] > 0).astype(int)
+    all_X["HasPool"] = (all_X["PoolArea"] > 0).astype(int)
+
+    # Colonnes remplacées : les années par les âges, PoolArea par HasPool
+    all_X = all_X.drop(columns=["YearBuilt", "YearRemodAdd", "PoolArea"])
+
+    return all_X
