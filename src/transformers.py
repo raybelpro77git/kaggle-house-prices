@@ -87,3 +87,25 @@ class Log1pTransformer(BaseEstimator, TransformerMixin):
         X[self.cols] = np.log1p(X[self.cols]) 
 
         return X
+
+class OrdinalMapper(BaseEstimator, TransformerMixin):
+    """Remplace les catégories ordinales par des entiers.
+    mapping : dict {colonne: {catégorie: entier}}.
+    Sans état. Lève une ValueError si une catégorie est absente du mapping."""
+    def __init__(self, mapping=None):
+        self.mapping = mapping
+
+    def fit(self, X, y=None):
+        self.n_features_in_ = X.shape[1]
+        return self
+
+    def transform(self, X):
+        X = X.copy()
+        for col, echelle in self.mapping.items():
+            codes = X[col].map(echelle)
+            # NaN après map = catégorie absente du dictionnaire (les imputers ont déjà retiré les vrais NaN)
+            if codes.isna().any():
+                valeurs_inconnues = X.loc[codes.isna(), col].unique().tolist()
+                raise ValueError(f"Erreur sur '{col}' : valeurs non reconnues par le mapping -> {valeurs_inconnues}")
+            X[col] = codes
+        return X
