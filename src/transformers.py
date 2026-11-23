@@ -1,4 +1,5 @@
 from sklearn.base import BaseEstimator, TransformerMixin
+import numpy as np
 
 
 class GroupMedianImputer(BaseEstimator, TransformerMixin):
@@ -65,4 +66,24 @@ class ModeImputer(BaseEstimator, TransformerMixin):
 
         # Remplissage des NaN restants par le mode appris
         X[self.target_col] = X[self.target_col].fillna(self.mode_)
+        return X
+
+class Log1pTransformer(BaseEstimator, TransformerMixin):
+    """Applique log1p (log(1 + x)) aux colonnes de cols.
+
+    Sans état : fit n'apprend rien, il existe pour respecter
+    le contrat du Pipeline (fit puis transform à chaque étape)."""
+    def __init__(self, cols=None):
+        self.cols = cols
+
+    def fit(self, X, y=None):
+
+        self.n_features_in_ = X.shape[1]
+        return self
+
+    def transform(self, X):
+        X = X.copy() 
+
+        X[self.cols] = np.log1p(X[self.cols]) 
+
         return X
